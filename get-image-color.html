@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>이미지 색상 추출</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: oklch(82.8% 0.111 230.318);
+        }
+        .container {
+            width: 800px;
+            max-width: 800px;
+        }
+        .card {
+            background-color: oklch(90.1% 0.058 230.902);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 10px 10px 5px oklch(74.6% 0.16 232.661);
+            margin: 20px;
+        }
+        .centered-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .card-title {
+            color: oklch(44.3% 0.11 240.79);
+            margin: 10px;
+        }
+        .card-contents {
+            color: oklch(58.8% 0.158 241.966);
+            font-style: italic;
+            margin: 10px;
+        }
+        .image-selector {
+            width: 100%;
+            border: 2.5px solid oklch(58.8% 0.158 241.966);
+            border-radius: 10px;
+        }
+        .color-result {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card centered-card">
+            <h1 class="card-title">이미지 색상 추출하기</h1>
+            <p class="card-contents">이미지에서 색상을 추출하는 도구입니다.</p>
+        </div>
+        <div class="card">
+            <h2 class="card-title">1. 이미지 선택</h2>
+            <input type="file" id="fileInput">
+        </div>
+        <div class="card">
+            <h2 class="card-title">2. 이미지 픽셀 클릭</h2>
+            <canvas id="imageSelector" class="image-selector"></canvas>
+        </div>
+        <div class="card">
+            <h2 class="card-title">3. 추출 결과 확인</h2>
+            <p>결과: <span id="visualColor" class="color-result" style="background-color: #000000;"></span> <span id="colorResult">#000000</span></p>
+        </div>
+    </div>
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        /**
+         * @type {HTMLCanvasElement}
+         */
+        const imageSelector = document.getElementById('imageSelector');
+        const visualColor = document.getElementById('visualColor');
+        const colorResult = document.getElementById('colorResult');
+
+        /**
+         * @type {Image}
+         */
+        let image;
+
+        const ctx = imageSelector.getContext('2d');
+
+        let clicked = false;
+
+        fileInput.addEventListener('input', () => {
+            const reader = new FileReader();
+            reader.onload = async () => {
+                image = new Image();
+                image.src = reader.result;
+                await new Promise(resolve => {
+                    image.onload = resolve;
+                });
+                ctx.clearRect(0, 0, imageSelector.width, imageSelector.height);
+                imageSelector.style.aspectRatio = `${image.naturalWidth} / ${image.naturalHeight}`;
+                imageSelector.width = image.naturalWidth;
+                imageSelector.height = image.naturalHeight;
+                ctx.drawImage(image, 0, 0);
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+        });
+
+        function manipulate(num) {
+            return num.toString(16).padStart(2, '0');
+        }
+
+        const handler = (event) => {
+            try {
+                if (clicked) {
+                    const rect = imageSelector.getBoundingClientRect();
+                    const imageX = Math.round((event.clientX - rect.x) / rect.width * image.naturalWidth);
+                    const imageY = Math.round((event.clientY - rect.y) / rect.height * image.naturalHeight);
+                    const imageData = ctx.getImageData(imageX, imageY, 1, 1);
+                    const uint8array = imageData.data;
+                    const selectedColor = `#${manipulate(uint8array[0]) + manipulate(uint8array[1]) + manipulate(uint8array[2])}`;
+                    visualColor.style.backgroundColor = selectedColor;
+                    colorResult.innerText = selectedColor;
+                }
+            } catch (error) {
+                fileInput.click();
+            }
+        };
+
+        imageSelector.addEventListener('mousedown', (event) => {
+            clicked = true;
+            handler(event);
+        });
+        imageSelector.addEventListener('mouseup', (event) => {
+            clicked = false;
+            handler(event);
+        });
+        imageSelector.addEventListener('mousemove', handler);
+    </script>
+</body>
+</html>
