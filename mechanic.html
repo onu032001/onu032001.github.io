@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>기계적 계산</title>
+    <style>
+        .numberInput {
+            width: 500px;
+        }
+    </style>
+</head>
+<body>
+    <h1>기계적 계산</h1>
+    <label for="currentElem">현재 값:</label><br>
+    <input id="currentElem" class="numberInput" type="number" value="0"><br>
+    <button onclick="changeCurrent(event)">+</button>
+    <button onclick="changeCurrent(event)">-</button>
+    <button onclick="changeCurrent(event)">초기화</button><br>
+    <label for="adderElem">더하는 값:</label><br>
+    <input id="adderElem" class="numberInput" type="number"><br>
+    <button onclick="changeAdder(event)">*10</button>
+    <button onclick="changeAdder(event)">/10</button><br>
+    <label for="expoElem">차수:</label><br>
+    <input id="expoElem" class="numberInput" type="number" value="0"><br>
+    <button onclick="changeExpo()">초기화</button><br>
+    <label for="pivotElem">합산 횟수:</label><br>
+    <input id="pivotElem" class="numberInput" type="number" value="0"><br>
+    <button onclick="changePivot()">초기화</button>
+    <script>
+        const currentElem = document.getElementById("currentElem");
+        const adderElem = document.getElementById("adderElem");
+        const expoElem = document.getElementById("expoElem");
+        const pivotElem = document.getElementById("pivotElem");
+
+        const values = new Proxy({ currentVal: 0, adderVal: 0, expoVal: 0, pivotVal: 0 }, {
+            set(target, property, value) {
+                if (property !== "expoVal") {
+                    value = Math.max(value, 0);
+                }
+                target[property] = value;
+                if (property === "currentVal") {
+                    currentElem.value = String(value);
+                } else if (property === "adderVal") {
+                    adderElem.value = String(value);
+                } else if (property === "expoVal") {
+                    expoElem.value = String(value);
+                } else if (property === "pivotVal") {
+                    pivotElem.value = String(value);
+                }
+            },
+            get(target, property) {
+                let newValue;
+                if (property === "currentVal") {
+                    newValue = currentElem.value;
+                } else if (property === "adderVal") {
+                    newValue = adderElem.value;
+                } else if (property === "expoVal") {
+                    newValue = expoElem.value;
+                } else if (property === "pivotVal") {
+                    newValue = pivotElem.value;
+                }
+                newValue = Number(newValue);
+                target[property] = newValue;
+                return newValue;
+            }
+        });
+
+        function changeCurrent(event) {
+            if (event.target.innerText === '+') {
+                values.currentVal += values.adderVal;
+                values.pivotVal++;
+            } else if (event.target.innerText === '-') {
+                if (values.currentVal >= values.adderVal) {
+                    values.currentVal -= values.adderVal;
+                    values.pivotVal++;
+                }
+            } else if (event.target.innerText === '초기화') {
+                values.currentVal = 0;
+                values.adderVal = 0;
+                values.expoVal = 0;
+                values.pivotVal = 0;
+            }
+        }
+
+        function changeAdder(event) {
+            if (event.target.innerText === '*10') {
+                values.adderVal *= 10;
+                values.pivotVal /= 10;
+                values.expoVal++;
+            } else if (event.target.innerText === '/10') {
+                values.adderVal /= 10;
+                values.pivotVal *= 10;
+                values.expoVal--;
+            }
+        }
+
+        function changeExpo() {
+            values.expoVal = 0;
+        }
+
+        function changePivot() {
+            values.pivotVal = 0;
+        }
+    </script>
+</body>
+</html>
